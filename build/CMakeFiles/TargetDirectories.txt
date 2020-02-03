@@ -1,3 +1,0 @@
-/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/build/CMakeFiles/rebuild_cache.dir
-/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/build/CMakeFiles/particle-filter.dir
-/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/build/CMakeFiles/edit_cache.dir

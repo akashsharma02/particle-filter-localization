@@ -81,5 +81,10 @@ namespace pfilter
         return occupancy_map;
     }
 
+    cv::Mat& MapReader::getFreeMap()
+    {
+        return free_map;
+    }
+
 } /* pfilter */
 

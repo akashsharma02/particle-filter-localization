@@ -20,6 +20,7 @@ namespace pfilter
         virtual ~MotionModel();
 
         bool isMoving(cv::Vec3d u_t0, cv::Vec3d u_t1);
+        cv::Vec3d update(cv::Vec3d u_t0, cv::Vec3d u_t1, cv::Vec3d x_t0);
     };
 } /* namespace pfilter */
 #endif /* MOTION_MODEL_H */

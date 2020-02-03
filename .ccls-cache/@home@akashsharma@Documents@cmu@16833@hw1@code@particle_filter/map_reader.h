@@ -18,6 +18,7 @@ namespace pfilter
         void display(void);
 
         cv::Mat& getOccupancyMap(void);
+        cv::Mat& getFreeMap(void);
 
         int size_x, size_y;
         int resolution;

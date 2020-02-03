@@ -95,6 +95,9 @@ int main(int argc, char *argv[])
     }
 
     std::string line;
+    int line_count = 1;
+    bool first_time = true;
+    cv::Vec3d u_t0;
     while(std::getline(log_file, line))
     {
         std::stringstream line_stream(line);
@@ -105,7 +108,59 @@ int main(int argc, char *argv[])
         while(line_stream >> val)
             measure_vals.push_back(val);
 
-    }
+        cv::Vec3d odometry_robot;
+        odometry_robot[0] = measure_vals[0];
+        odometry_robot[1] = measure_vals[1];
+        odometry_robot[2] = measure_vals[2];
 
+        double time_stamp = measure_vals[measure_vals.size()-1];
+
+        cv::Vec3d odometry_laser;
+        std::vector<double> ranges;
+        if(measure_type == 'L')
+        {
+            odometry_laser[0] = measure_vals[3];
+            odometry_laser[1] = measure_vals[4];
+            odometry_laser[2] = measure_vals[5];
+            std::vector<double>::iterator it(measure_vals.begin()+5);
+            ranges.assign(it, measure_vals.end()-1);
+        }
+
+        std::cout << "Processing time step: " << line_count << " at time: " << time_stamp << std::endl;
+        line_count++;
+
+        if(first_time)
+        {
+            u_t0 = odometry_robot;
+            first_time = false;
+            continue;
+        }
+
+        cv::Vec3d u_t1 = odometry_robot;
+        std::vector<cv::Vec3d> new_particles(num_particles);
+
+        bool is_moving = motion_model.isMoving(u_t0, u_t1);
+        if(!is_moving)
+            continue;
+
+        // For each particle
+        for(unsigned int m = 0; m < num_particles; m++)
+        {
+            cv::Vec3d x_t0 = particles[m];
+            double weight  = weights[m];
+            cv::Vec3d x_t1 = motion_model.update(u_t0, u_t1, x_t0);
+            new_particles[m] = x_t1;
+        }
+
+        if(visualize)
+        {
+            cv::Mat image = plotParticles(num_particles, new_particles, map_reader);
+            cv::imshow("Map", image);
+            char c = static_cast<char>(cv::waitKey(25));
+            if(c == 27)
+                break;
+        }
+        u_t0 = u_t1;
+    }
     return 0;
 }

@@ -1,6 +1,7 @@
 #ifndef MOTION_MODEL_H
 #define MOTION_MODEL_H
 
+#include <random>
 #include <opencv2/opencv.hpp>
 
 namespace pfilter
@@ -15,6 +16,7 @@ namespace pfilter
         float alpha_4;
         double motion_threshold;
 
+        std::default_random_engine generator;
     public:
         MotionModel(int resolution);
         virtual ~MotionModel();

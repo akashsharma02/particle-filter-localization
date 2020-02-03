@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/main.cpp
+iostream
+-
+opencv2/opencv.hpp
+-
+map_reader.h
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/map_reader.h
+motion_model.h
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/motion_model.h
+
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/map_reader.h
+string
+-
+opencv2/opencv.hpp
+-
+
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/motion_model.cpp
+motion_model.h
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/motion_model.h
+cmath
+-
+
+/home/akashsharma/Documents/cmu/16833/hw1/code/particle_filter/motion_model.h
+opencv2/opencv.hpp
+-
+

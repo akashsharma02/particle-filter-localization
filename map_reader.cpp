@@ -40,8 +40,11 @@ namespace pfilter
             }
 
             std::cout << "World size: (" << size_y << ", " << size_x << ") Resolution: " << resolution << " cm" << std::endl;
+            cv::Mat occupancy = cv::Mat::zeros(size_x/resolution, size_y/resolution, CV_64F);
+            cv::Mat free = cv::Mat::zeros(size_x/resolution, size_y/resolution, CV_64F);
             occupancy_map = cv::Mat::zeros(size_x/resolution, size_y/resolution, CV_64F);
             free_map      = cv::Mat::zeros(size_y/resolution, size_x/resolution, CV_64F);
+
             int count = 0; double val;
             while(map_file >> val)
             {
@@ -49,17 +52,18 @@ namespace pfilter
                 int tempcol = count % (size_x/resolution);
                 if(val < 0.0)
                 {
-                    occupancy_map.at<double>(temprow, tempcol) = -1.0;
-                    free_map.at<double>(temprow, tempcol) = -1.0;
+                    occupancy.at<double>(temprow, tempcol) = -1.0;
+                    free.at<double>(temprow, tempcol) = -1.0;
                 }
                 else if(val > 0.0)
                 {
-                    occupancy_map.at<double>(temprow, tempcol) = 1-val;
-                    free_map.at<double>(temprow, tempcol) = val;
+                    occupancy.at<double>(temprow, tempcol) = 1-val;
+                    free.at<double>(temprow, tempcol) = val;
                 }
                 count++;
             }
-
+            cv::flip(occupancy, occupancy_map, 0);
+            cv::flip(free, free_map, 0);
             std::cout << "Finished reading map file: " << filename << std::endl;
         }
     }

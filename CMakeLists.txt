@@ -9,6 +9,7 @@ add_executable(particle-filter
                 main.cpp
                 map_reader.cpp
                 motion_model.cpp
+                sensor_model.cpp
               )
 
 include_directories(${OpenCV_INCLUDE_DIRS})

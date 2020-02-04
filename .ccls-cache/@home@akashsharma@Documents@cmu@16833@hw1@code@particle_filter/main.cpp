@@ -5,13 +5,15 @@
 
 #include "map_reader.h"
 #include "motion_model.h"
+#include "sensor_model.h"
 
 void initParticles(int num_particles, pfilter::MapReader& r_map_reader, std::vector<cv::Vec3d>& r_particles, std::vector<double>& r_weights)
 {
     cv::Mat occupancy_map = r_map_reader.getOccupancyMap();
-    std::default_random_engine generator;
+    std::random_device rd;
+    std::mt19937 generator(rd());
     std::uniform_int_distribution<> x_val_distribution(3000, 7000);
-    std::uniform_int_distribution<> y_val_distribution(0, 8000);
+    std::uniform_int_distribution<> y_val_distribution(0, 7500);
     std::uniform_real_distribution<> theta_distribution(-3.14, 3.14);
     std::uniform_real_distribution<> u_distribution(0, 1);
 
@@ -37,22 +39,45 @@ void initParticles(int num_particles, pfilter::MapReader& r_map_reader, std::vec
 cv::Mat plotParticles(int num_particles, const std::vector<cv::Vec3d>& r_particles, pfilter::MapReader& r_map_reader)
 {
     cv::Mat free_map = r_map_reader.getFreeMap();
-    cv::Mat image, image_color;
-    int arrow_length = 4;
+    cv::Mat image, image_color, image_color_flipped;
+    int arrow_length = 5;
     free_map.convertTo(image, CV_8UC3, 255);
     cv::cvtColor(image, image_color, cv::COLOR_GRAY2BGR);
+    cv::circle(image_color, cv::Point2i(0, 0), 10, cv::Scalar(0, 255, 0), -1);
     for(int i = 0; i < num_particles; i++)
     {
-        cv::Point2d point1, point2;
+        cv::Point2i point1, point2;
         point1.x = r_particles[i][0]/r_map_reader.resolution; point1.y = r_particles[i][1]/r_map_reader.resolution;
-        double theta1 = r_particles[i][1];
+        double theta1 = r_particles[i][2];
         point2.x = std::round(point1.x + arrow_length*cos(theta1));
         point2.y = std::round(point1.y + arrow_length*sin(theta1));
 
-        cv::circle(image_color, point1, 2, cv::Scalar(255, 0, 0), -1);
+        cv::circle(image_color, point1, 3, cv::Scalar(255, 0, 0), -1);
         cv::arrowedLine(image_color, point1, point2, cv::Scalar(0, 255, 0));
     }
-    return image_color;
+    cv::flip(image_color, image_color_flipped, 0);
+    return image_color_flipped;
+}
+
+std::vector<cv::Vec3d> resample(int num_particles, const std::vector<cv::Vec3d>& r_particles, const std::vector<double>& r_weights)
+{
+    std::vector<cv::Vec3d> new_particles;
+    std::default_random_engine generator;
+    std::uniform_real_distribution<> r(0, 1.0);
+    double random_val = r(generator);
+    double offset = r_weights[0];
+    int i = 0;
+    for(unsigned int m = 1; m <= num_particles; m++)
+    {
+        double U = (random_val + (m-1))/num_particles;
+        while(U > offset)
+        {
+            i++;
+            offset = offset + r_weights[i];
+        }
+        new_particles.push_back(r_particles[i]);
+    }
+    return new_particles;
 }
 
 int main(int argc, char *argv[])
@@ -76,10 +101,14 @@ int main(int argc, char *argv[])
     }
 
     bool visualize = true;
+    bool test_raycast = false;
     int num_particles = 5000;
 
     pfilter::MapReader map_reader(map_filename);
     pfilter::MotionModel motion_model(map_reader.resolution);
+
+    //TODO: Handle the case with other logs
+    pfilter::SensorModel sensor_model(map_reader, 1);
 
     std::vector<cv::Vec3d> particles;
     std::vector<double> weights;
@@ -122,7 +151,7 @@ int main(int argc, char *argv[])
             odometry_laser[0] = measure_vals[3];
             odometry_laser[1] = measure_vals[4];
             odometry_laser[2] = measure_vals[5];
-            std::vector<double>::iterator it(measure_vals.begin()+5);
+            std::vector<double>::iterator it(measure_vals.begin()+6);
             ranges.assign(it, measure_vals.end()-1);
         }
 
@@ -138,29 +167,52 @@ int main(int argc, char *argv[])
 
         cv::Vec3d u_t1 = odometry_robot;
         std::vector<cv::Vec3d> new_particles(num_particles);
+        std::vector<double> new_weights(num_particles, 0);
 
+        //TODO: Consider whether the particles need to be re-weighted when there is no motion
         bool is_moving = motion_model.isMoving(u_t0, u_t1);
         if(!is_moving)
             continue;
 
+        //TODO: Check whether this is necessary
+        if(measure_type == 'O')
+            continue;
+
         // For each particle
+        double weight_norm = 0;
         for(unsigned int m = 0; m < num_particles; m++)
         {
             cv::Vec3d x_t0 = particles[m];
             double weight  = weights[m];
             cv::Vec3d x_t1 = motion_model.update(u_t0, u_t1, x_t0);
+            if(measure_type == 'L')
+            {
+                double w_t = sensor_model.beamRangeFinderModel(ranges, x_t1, test_raycast);
+                weight_norm = weight_norm + w_t;
+                new_weights[m] = w_t;
+            }
+            else
+            {
+                new_weights[m] = weight;
+            }
             new_particles[m] = x_t1;
         }
+        //normalize the weights
+        assert(weight_norm != 0);
+        for(unsigned int m = 0; m < num_particles; m++)
+            new_weights[m] /= weight_norm;
 
+        std::vector<cv::Vec3d> new_resampled_particles = resample(num_particles, new_particles, new_weights);
+        particles.assign(new_resampled_particles.begin(), new_resampled_particles.end());
+        u_t0 = u_t1;
         if(visualize)
         {
-            cv::Mat image = plotParticles(num_particles, new_particles, map_reader);
+            cv::Mat image = plotParticles(num_particles, particles, map_reader);
             cv::imshow("Map", image);
             char c = static_cast<char>(cv::waitKey(25));
             if(c == 27)
                 break;
         }
-        u_t0 = u_t1;
     }
     return 0;
 }

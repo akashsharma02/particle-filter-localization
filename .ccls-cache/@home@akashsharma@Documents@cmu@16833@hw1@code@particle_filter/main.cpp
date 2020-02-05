@@ -59,15 +59,16 @@ cv::Mat plotParticles(int num_particles, const std::vector<cv::Vec3d>& r_particl
     return image_color_flipped;
 }
 
-std::vector<cv::Vec3d> resample(int num_particles, const std::vector<cv::Vec3d>& r_particles, const std::vector<double>& r_weights)
+void resample(int num_particles, pfilter::MapReader& r_map_reader, std::vector<cv::Vec3d>& r_particles, std::vector<double>& r_weights)
 {
     std::vector<cv::Vec3d> new_particles;
+    std::vector<double> new_weights;
     std::default_random_engine generator;
     std::uniform_real_distribution<> r(0, 1.0);
     double random_val = r(generator);
     double offset = r_weights[0];
     int i = 0;
-    for(unsigned int m = 1; m <= num_particles; m++)
+    for(unsigned int m = 1; m <= num_particles - num_particles/40; m++)
     {
         double U = (random_val + (m-1))/num_particles;
         while(U > offset)
@@ -76,13 +77,23 @@ std::vector<cv::Vec3d> resample(int num_particles, const std::vector<cv::Vec3d>&
             offset = offset + r_weights[i];
         }
         new_particles.push_back(r_particles[i]);
+        new_weights.push_back(r_weights[i]);
     }
-    return new_particles;
+    // Add num_particles/40 random particles
+    std::vector<cv::Vec3d> random_particles; std::vector<double> random_weights;
+    initParticles(num_particles/40, r_map_reader, random_particles, random_weights);
+    std::fill(random_weights.begin(), random_weights.end(), 1/num_particles);
+
+    new_particles.insert(new_particles.end(), random_particles.begin(), random_particles.end());
+    new_weights.insert(new_weights.end(), random_weights.begin(), random_weights.end());
+
+    r_particles.assign(new_particles.begin(), new_particles.end());
+    r_weights.assign(new_weights.begin(), new_weights.end());
 }
 
 int main(int argc, char *argv[])
 {
-    // Read the filenames from the command line
+    // Read the filenames from the command line and check for issues
     if(argc < 3)
     {
         std::cerr << " Usage: particle-filter <path-to-map> <path-to-log-file>" << std::endl;
@@ -91,28 +102,38 @@ int main(int argc, char *argv[])
     std::string map_filename(argv[1]);
     std::string log_filename(argv[2]);
 
+    pfilter::MapReader map_reader(map_filename);
+    if(!map_reader.getMapState())
+        return 2;
+
     std::fstream log_file;
     log_file.open(log_filename);
 
     if(!log_file.is_open())
     {
-        std::cerr << "Error: Unable to read log file" << std::endl;
-        return 2;
+        std::cerr << "Error: Unable to read log file!" << std::endl;
+        return 3;
     }
+    //Read the log file number to initialize the max range of sensor
+    std::string logfilenum_str = log_filename.substr(log_filename.find_last_of(".")-1, 1);
+    int logfile_num = std::stoi(logfilenum_str);
+    if(logfile_num < 1 || logfile_num > 5)
+    {
+        std::cerr << "Error: Unknown log file, LogFile format robotdata<number>.log" << std::endl;
+        return 4;
+    }
+
+    pfilter::MotionModel motion_model(map_reader.resolution);
+    pfilter::SensorModel sensor_model(map_reader, logfile_num-1);
 
     bool visualize = true;
     bool test_raycast = false;
     int num_particles = 5000;
+    double reinitialization_threshold = 1.0;
 
-    pfilter::MapReader map_reader(map_filename);
-    pfilter::MotionModel motion_model(map_reader.resolution);
-
-    //TODO: Handle the case with other logs
-    pfilter::SensorModel sensor_model(map_reader, 1);
-
+    // Initialize the particles
     std::vector<cv::Vec3d> particles;
     std::vector<double> weights;
-
     initParticles(num_particles, map_reader, particles, weights);
 
     if(visualize)
@@ -120,6 +141,7 @@ int main(int argc, char *argv[])
         cv::Mat image = plotParticles(num_particles, particles, map_reader);
         cv::namedWindow("Map", CV_WINDOW_NORMAL);
         cv::imshow("Map", image);
+        std::cout << "Press a key to start" << std::endl;
         cv::waitKey(0);
     }
 
@@ -129,6 +151,11 @@ int main(int argc, char *argv[])
     cv::Vec3d u_t0;
     while(std::getline(log_file, line))
     {
+        if(line.size() == 0)
+        {
+            std::cerr << "Log file error: discontinuous. " << std::endl;
+            return 5;
+        }
         std::stringstream line_stream(line);
         char measure_type; double val;
         std::vector<double> measure_vals;
@@ -136,6 +163,7 @@ int main(int argc, char *argv[])
         line_stream >> measure_type;
         while(line_stream >> val)
             measure_vals.push_back(val);
+
 
         cv::Vec3d odometry_robot;
         odometry_robot[0] = measure_vals[0];
@@ -180,6 +208,8 @@ int main(int argc, char *argv[])
 
         // For each particle
         double weight_norm = 0;
+        double max_weight = 0;
+        double min_weight = std::numeric_limits<double>::infinity();
         for(unsigned int m = 0; m < num_particles; m++)
         {
             cv::Vec3d x_t0 = particles[m];
@@ -187,7 +217,12 @@ int main(int argc, char *argv[])
             cv::Vec3d x_t1 = motion_model.update(u_t0, u_t1, x_t0);
             if(measure_type == 'L')
             {
+                assert(ranges.size() != 0);
                 double w_t = sensor_model.beamRangeFinderModel(ranges, x_t1, test_raycast);
+                if(w_t > max_weight)
+                    max_weight = w_t;
+                if(w_t < min_weight)
+                    min_weight = w_t;
                 weight_norm = weight_norm + w_t;
                 new_weights[m] = w_t;
             }
@@ -199,12 +234,25 @@ int main(int argc, char *argv[])
         }
         //normalize the weights
         assert(weight_norm != 0);
+
         for(unsigned int m = 0; m < num_particles; m++)
             new_weights[m] /= weight_norm;
 
-        std::vector<cv::Vec3d> new_resampled_particles = resample(num_particles, new_particles, new_weights);
-        particles.assign(new_resampled_particles.begin(), new_resampled_particles.end());
+        //Handle kidnapped robot problem
+        if((max_weight - min_weight)/weight_norm <= (reinitialization_threshold * 1/num_particles))
+        {
+            new_particles.clear(); new_weights.clear();
+            initParticles(num_particles, map_reader, new_particles, new_weights);
+        }
+        else
+        {
+            resample(num_particles, map_reader, new_particles, new_weights);
+        }
+
+        particles.assign(new_particles.begin(), new_particles.end());
+        weights.assign(new_weights.begin(), new_weights.end());
         u_t0 = u_t1;
+
         if(visualize)
         {
             cv::Mat image = plotParticles(num_particles, particles, map_reader);

@@ -10,6 +10,7 @@ namespace pfilter
     {
     private:
         cv::Mat occupancy_map, free_map;
+        bool map_state;
 
     public:
         MapReader(std::string filename);
@@ -19,6 +20,7 @@ namespace pfilter
 
         cv::Mat& getOccupancyMap(void);
         cv::Mat& getFreeMap(void);
+        inline bool getMapState(void) { return map_state; }
 
         int size_x, size_y;
         int resolution;

@@ -8,6 +8,7 @@ namespace pfilter
         : size_x(0)
         , size_y(0)
         , resolution(0)
+        , map_state(true)
     {
 
         std::ifstream map_file;
@@ -65,6 +66,11 @@ namespace pfilter
             cv::flip(occupancy, occupancy_map, 0);
             cv::flip(free, free_map, 0);
             std::cout << "Finished reading map file: " << filename << std::endl;
+        }
+        else
+        {
+            std::cerr << "Error: Unable to read map file!" << std::endl;
+            map_state = false;
         }
     }
 

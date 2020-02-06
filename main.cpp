@@ -12,6 +12,7 @@ void initParticles(int num_particles, pfilter::MapReader& r_map_reader, std::vec
     cv::Mat occupancy_map = r_map_reader.getOccupancyMap();
     std::random_device rd;
     std::mt19937 generator(rd());
+    /* std::default_random_engine generator; */
     std::uniform_int_distribution<> x_val_distribution(3000, 7000);
     std::uniform_int_distribution<> y_val_distribution(0, 7500);
     std::uniform_real_distribution<> theta_distribution(-3.14, 3.14);
@@ -40,7 +41,7 @@ cv::Mat plotParticles(int num_particles, const std::vector<cv::Vec3d>& r_particl
 {
     cv::Mat free_map = r_map_reader.getFreeMap();
     cv::Mat image, image_color, image_color_flipped;
-    int arrow_length = 5;
+    int arrow_length = 6;
     free_map.convertTo(image, CV_8UC3, 255);
     cv::cvtColor(image, image_color, cv::COLOR_GRAY2BGR);
     cv::circle(image_color, cv::Point2i(0, 0), 10, cv::Scalar(0, 255, 0), -1);
@@ -68,7 +69,7 @@ void resample(int num_particles, pfilter::MapReader& r_map_reader, std::vector<c
     double random_val = r(generator);
     double offset = r_weights[0];
     int i = 0;
-    for(unsigned int m = 1; m <= num_particles - num_particles/40; m++)
+    for(unsigned int m = 1; m <= num_particles; m++)
     {
         double U = (random_val + (m-1))/num_particles;
         while(U > offset)
@@ -79,13 +80,6 @@ void resample(int num_particles, pfilter::MapReader& r_map_reader, std::vector<c
         new_particles.push_back(r_particles[i]);
         new_weights.push_back(r_weights[i]);
     }
-    // Add num_particles/40 random particles
-    std::vector<cv::Vec3d> random_particles; std::vector<double> random_weights;
-    initParticles(num_particles/40, r_map_reader, random_particles, random_weights);
-    std::fill(random_weights.begin(), random_weights.end(), 1/num_particles);
-
-    new_particles.insert(new_particles.end(), random_particles.begin(), random_particles.end());
-    new_weights.insert(new_weights.end(), random_weights.begin(), random_weights.end());
 
     r_particles.assign(new_particles.begin(), new_particles.end());
     r_weights.assign(new_weights.begin(), new_weights.end());
@@ -128,7 +122,7 @@ int main(int argc, char *argv[])
 
     bool visualize = true;
     bool test_raycast = false;
-    int num_particles = 5000;
+    int num_particles = 7500;
     double reinitialization_threshold = 1.0;
 
     // Initialize the particles
@@ -239,7 +233,7 @@ int main(int argc, char *argv[])
             new_weights[m] /= weight_norm;
 
         //Handle kidnapped robot problem
-        if((max_weight - min_weight)/weight_norm <= (reinitialization_threshold * 1/num_particles))
+        if(max_weight/weight_norm <= (reinitialization_threshold * 1/num_particles))
         {
             new_particles.clear(); new_weights.clear();
             initParticles(num_particles, map_reader, new_particles, new_weights);

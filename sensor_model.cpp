@@ -8,9 +8,9 @@ namespace pfilter
         : mr_map_reader(r_map_reader)
         , ray_max(ray_max_table.at(log_file_num))
         , occupancy_threshold(0.5)
-        , z_hit(1500.0)
-        , z_short(1750.0)
-        , z_max(1500.0)
+        , z_hit(1600.0)
+        , z_short(1800.0)
+        , z_max(600.0)
         , z_rand(250.0)
         , gaussian_variance(90.0) //30 pixels of stddev
         , lambda_short(100.0)

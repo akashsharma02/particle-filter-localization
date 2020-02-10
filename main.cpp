@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 
     bool visualize = true;
     bool test_raycast = false;
-    int num_particles = 7500;
+    int num_particles = 10000;
     double reinitialization_threshold = 1.0;
 
     // Initialize the particles
@@ -191,7 +191,6 @@ int main(int argc, char *argv[])
         std::vector<cv::Vec3d> new_particles(num_particles);
         std::vector<double> new_weights(num_particles, 0);
 
-        //TODO: Consider whether the particles need to be re-weighted when there is no motion
         bool is_moving = motion_model.isMoving(u_t0, u_t1);
         if(!is_moving)
             continue;
@@ -204,6 +203,9 @@ int main(int argc, char *argv[])
         double weight_norm = 0;
         double max_weight = 0;
         double min_weight = std::numeric_limits<double>::infinity();
+#pragma omp parallel
+        {
+#pragma omp for
         for(unsigned int m = 0; m < num_particles; m++)
         {
             cv::Vec3d x_t0 = particles[m];
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
             }
             new_particles[m] = x_t1;
         }
+        } // end of parallel block
         //normalize the weights
         assert(weight_norm != 0);
 

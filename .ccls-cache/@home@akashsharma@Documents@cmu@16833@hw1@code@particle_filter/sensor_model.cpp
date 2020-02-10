@@ -144,6 +144,7 @@ namespace pfilter
     {
         double q = 0;
         double max_p = 0;
+        //Sample from the range sensor every 20 degrees only
         for(unsigned int i = 0; i < z_t.size(); i += 20)
         {
             std::vector<cv::Point2i> line_points;

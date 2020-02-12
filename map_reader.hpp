@@ -1,5 +1,5 @@
-#ifndef MAP_READER_H
-#define MAP_READER_H
+#ifndef MAP_READER_HPP
+#define MAP_READER_HPP
 
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -27,4 +27,4 @@ namespace pfilter
     };
 } /* pfilter */
 
-#endif /* MAP_READER_H */
+#endif /* MAP_READER_HPP */

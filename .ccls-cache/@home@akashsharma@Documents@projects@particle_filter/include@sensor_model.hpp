@@ -1,5 +1,5 @@
-#ifndef SENSOR_MODEL_H
-#define SENSOR_MODEL_H
+#ifndef SENSOR_MODEL_HPP
+#define SENSOR_MODEL_HPP
 
 #include "map_reader.h"
 
@@ -35,4 +35,4 @@ namespace pfilter
         double beamRangeFinderModel(const std::vector<double>& z_t, const cv::Vec3d& x_t, bool test_raycast);
     };
 } /* namespace pfilter */
-#endif /* SENSOR_MODEL_H */
+#endif /* SENSOR_MODEL_HPP */

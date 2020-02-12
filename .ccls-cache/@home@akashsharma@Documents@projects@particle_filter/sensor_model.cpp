@@ -1,4 +1,4 @@
-#include "sensor_model.h"
+#include "sensor_model.hpp"
 
 #include <cmath>
 

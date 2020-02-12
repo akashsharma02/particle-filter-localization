@@ -1,5 +1,5 @@
-#ifndef MOTION_MODEL_H
-#define MOTION_MODEL_H
+#ifndef MOTION_MODEL_HPP
+#define MOTION_MODEL_HPP
 
 #include <random>
 #include <opencv2/opencv.hpp>
@@ -25,4 +25,4 @@ namespace pfilter
         cv::Vec3d update(cv::Vec3d u_t0, cv::Vec3d u_t1, cv::Vec3d x_t0);
     };
 } /* namespace pfilter */
-#endif /* MOTION_MODEL_H */
+#endif /* MOTION_MODEL_HPP */

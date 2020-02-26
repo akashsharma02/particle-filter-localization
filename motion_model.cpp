@@ -9,8 +9,8 @@ namespace pfilter
         : map_resolution(resolution)
         , alpha_1(0.0001)
         , alpha_2(0.0001)
-        , alpha_3(0.0001)
-        , alpha_4(0.0001)
+        , alpha_3(0.0005)
+        , alpha_4(0.0005)
         , motion_threshold(0.5) // 1cm
     {
     }
@@ -30,9 +30,9 @@ namespace pfilter
         double y1 = u_t1[1];
         double theta1 = u_t1[2];
 
-        double odo_rot1_delta = std::atan2(y1 - y0, x1 - x0) - theta0;
-        double odo_trans_delta = std::sqrt(std::pow(x1 - x0, 2) + std::pow(y1 - y0, 2));
-        double odo_rot2_delta = theta1 - theta0 - odo_rot1_delta;
+        odo_rot1_delta = std::atan2(y1 - y0, x1 - x0) - theta0;
+        odo_trans_delta = std::sqrt(std::pow(x1 - x0, 2) + std::pow(y1 - y0, 2));
+        odo_rot2_delta = theta1 - theta0 - odo_rot1_delta;
 
         std::normal_distribution<double> rot1_dist(0, std::sqrt(alpha_1*(std::pow(odo_rot1_delta, 2)) + alpha_2*(std::pow(odo_trans_delta, 2))));
         std::normal_distribution<double> trans_dist(0, std::sqrt(alpha_3*(std::pow(odo_trans_delta, 2)) + alpha_4*(std::pow(odo_rot1_delta, 2) + std::pow(odo_rot2_delta, 2))));

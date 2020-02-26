@@ -8,12 +8,12 @@ namespace pfilter
         : mr_map_reader(r_map_reader)
         , ray_max(ray_max_table.at(log_file_num))
         , occupancy_threshold(0.5)
-        , z_hit(1600.0)
-        , z_short(1800.0)
-        , z_max(600.0)
-        , z_rand(250.0)
-        , gaussian_variance(90.0) //30 pixels of stddev
-        , lambda_short(100.0)
+        , z_hit(1470)
+        , z_short(1800)
+        , z_max(400)
+        , z_rand(700)
+        , gaussian_variance(80.0) //30 pixels of stddev
+        , lambda_short(800.0)
     {
 
 
@@ -149,7 +149,7 @@ namespace pfilter
         double max_p = 0;
         //Sample from the range sensor every 20 degrees only
         std::vector<std::vector<cv::Point2i>> lines;
-        for(unsigned int i = 0; i < z_t.size(); i += 20)
+        for(unsigned int i = 0; i < z_t.size(); i += 10)
         {
             std::vector<cv::Point2i> line_points;
             double actual_range = raycast(x_t, i, line_points);

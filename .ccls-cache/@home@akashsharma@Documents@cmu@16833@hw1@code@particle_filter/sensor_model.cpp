@@ -1,4 +1,4 @@
-#include "sensor_model.h"
+#include "sensor_model.hpp"
 
 #include <cmath>
 
@@ -8,12 +8,12 @@ namespace pfilter
         : mr_map_reader(r_map_reader)
         , ray_max(ray_max_table.at(log_file_num))
         , occupancy_threshold(0.5)
-        , z_hit(1600.0)
-        , z_short(1800.0)
-        , z_max(600.0)
-        , z_rand(250.0)
-        , gaussian_variance(90.0) //30 pixels of stddev
-        , lambda_short(100.0)
+        , z_hit(1470)
+        , z_short(1800)
+        , z_max(400)
+        , z_rand(700)
+        , gaussian_variance(80.0) //30 pixels of stddev
+        , lambda_short(800.0)
     {
 
 
@@ -92,7 +92,6 @@ namespace pfilter
                 if(y > mr_map_reader.size_y/mr_map_reader.resolution - 1 || y < 0)
                     break;
                 cv::Point2i point = cv::Point2i(x, y);
-                /* std::cout << cv::Point2i(x, y) << occupancy_map.at<double>(x, y) << std::endl; */
                 if(occupancy_map.at<double>(point) > occupancy_threshold)
                     break;
                 r_ray_points.push_back(point);
@@ -130,12 +129,16 @@ namespace pfilter
         return distance;
     }
 
-    cv::Mat SensorModel::testRaycast(cv::Mat world_free_map, const std::vector<cv::Point2i> &r_line_points)
+    cv::Mat SensorModel::testRaycast(cv::Mat world_free_map, const std::vector<std::vector<cv::Point2i>>& r_lines)
     {
         cv::Mat image, image_color, image_color_flipped;
         world_free_map.convertTo(image, CV_8UC3, 255);
         cv::cvtColor(image, image_color, cv::COLOR_GRAY2BGR);
-        cv::line(image_color, r_line_points[0], r_line_points[r_line_points.size()-1], cv::Scalar(128, 128, 0));
+        for (auto line : r_lines)
+        {
+            if(line.size() > 0)
+                cv::line(image_color, line[0], line[line.size()-1], cv::Scalar(128, 128, 0));
+        }
         cv::flip(image_color, image_color_flipped, 0);
         return image_color_flipped;
     }
@@ -145,17 +148,12 @@ namespace pfilter
         double q = 0;
         double max_p = 0;
         //Sample from the range sensor every 20 degrees only
-        for(unsigned int i = 0; i < z_t.size(); i += 20)
+        std::vector<std::vector<cv::Point2i>> lines;
+        for(unsigned int i = 0; i < z_t.size(); i += 10)
         {
             std::vector<cv::Point2i> line_points;
             double actual_range = raycast(x_t, i, line_points);
-            if(line_points.size() > 0 && test_raycast)
-            {
-                std::cout << i << " " << line_points[0] << " " << line_points[line_points.size()-1] << std::endl;
-                cv::Mat image = testRaycast(mr_map_reader.getFreeMap(), line_points);
-                cv::imshow("Map", image);
-                cv::waitKey(0);
-            }
+            lines.push_back(line_points);
             double measured_range = z_t[i]/mr_map_reader.resolution;
             double gauss = z_hit * gaussian(actual_range, measured_range);
             double exp   = z_short * expon(actual_range, measured_range);
@@ -166,6 +164,12 @@ namespace pfilter
             if(p > max_p)
                 max_p = p;
             q = q + p;
+        }
+        if(lines.size() > 0 && test_raycast)
+        {
+            cv::Mat image = testRaycast(mr_map_reader.getFreeMap(), lines);
+            cv::imshow("Map", image);
+            while(cv::waitKey(0) != 27);
         }
         //NOTE: subtract max log likelihood for numerical stability
         q = q - max_p;

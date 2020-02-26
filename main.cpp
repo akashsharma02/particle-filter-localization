@@ -122,8 +122,9 @@ int main(int argc, char *argv[])
 
     bool visualize = true;
     bool test_raycast = false;
-    const int max_particles = 10000;
-    int num_particles = max_particles;
+    const double RESPAWN_DISTANCE_THRESHOLD = 50.0;
+    const int MAX_PARTICLES = 10000;
+    int num_particles = MAX_PARTICLES;
     float particle_scaling_factor = 1.225;
     double reinitialization_threshold = 1.0;
 
@@ -238,10 +239,11 @@ int main(int argc, char *argv[])
             new_weights[m] /= weight_norm;
 
         //Handle kidnapped robot problem
-        if(max_weight/weight_norm <= (reinitialization_threshold * 1/num_particles))
+        if(motion_model.distanceMoved() > RESPAWN_DISTANCE_THRESHOLD ||
+           max_weight/weight_norm <= (reinitialization_threshold * 1/num_particles))
         {
             new_particles.clear(); new_weights.clear();
-            num_particles = max_particles;
+            num_particles = MAX_PARTICLES;
             initParticles(num_particles, map_reader, new_particles, new_weights);
         }
         else

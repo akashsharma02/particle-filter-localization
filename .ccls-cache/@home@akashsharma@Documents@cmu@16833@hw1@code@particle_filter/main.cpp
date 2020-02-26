@@ -3,9 +3,9 @@
 #include <random>
 #include <opencv2/opencv.hpp>
 
-#include "map_reader.h"
-#include "motion_model.h"
-#include "sensor_model.h"
+#include "map_reader.hpp"
+#include "motion_model.hpp"
+#include "sensor_model.hpp"
 
 void initParticles(int num_particles, pfilter::MapReader& r_map_reader, std::vector<cv::Vec3d>& r_particles, std::vector<double>& r_weights)
 {
@@ -122,7 +122,10 @@ int main(int argc, char *argv[])
 
     bool visualize = true;
     bool test_raycast = false;
-    int num_particles = 10000;
+    const double RESPAWN_DISTANCE_THRESHOLD = 50.0;
+    const int MAX_PARTICLES = 10000;
+    int num_particles = MAX_PARTICLES;
+    float particle_scaling_factor = 1.225;
     double reinitialization_threshold = 1.0;
 
     // Initialize the particles
@@ -236,13 +239,22 @@ int main(int argc, char *argv[])
             new_weights[m] /= weight_norm;
 
         //Handle kidnapped robot problem
-        if(max_weight/weight_norm <= (reinitialization_threshold * 1/num_particles))
+        if(motion_model.distanceMoved() > RESPAWN_DISTANCE_THRESHOLD ||
+           max_weight/weight_norm <= (reinitialization_threshold * 1/num_particles))
         {
             new_particles.clear(); new_weights.clear();
+            num_particles = MAX_PARTICLES;
             initParticles(num_particles, map_reader, new_particles, new_weights);
         }
         else
         {
+            //Adaptively resample the number of particles
+            float difference = max_weight - min_weight;
+            float sum = max_weight + min_weight;
+            if(difference != 0.0 && sum/difference > particle_scaling_factor)
+                num_particles = num_particles - num_particles/500;
+            else
+                num_particles = num_particles + num_particles/500;
             resample(num_particles, map_reader, new_particles, new_weights);
         }
 

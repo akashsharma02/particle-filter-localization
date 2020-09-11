@@ -10,10 +10,10 @@ namespace pfilter
     {
     private:
         int map_resolution;
-        float alpha_1;
-        float alpha_2;
-        float alpha_3;
-        float alpha_4;
+        double alpha_1;
+        double alpha_2;
+        double alpha_3;
+        double alpha_4;
         double motion_threshold;
 
         double odo_rot1_delta;
@@ -25,7 +25,7 @@ namespace pfilter
         MotionModel(int resolution);
         virtual ~MotionModel();
 
-        bool isMoving(cv::Vec3d u_t0, cv::Vec3d u_t1);
+        bool isMoving(const cv::Vec3d& u_t0, const cv::Vec3d& u_t1);
         inline double distanceMoved(void) { return odo_trans_delta; };
         cv::Vec3d update(cv::Vec3d u_t0, cv::Vec3d u_t1, cv::Vec3d x_t0);
 

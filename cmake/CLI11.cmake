@@ -1,0 +1,7 @@
+include(${CMAKE_CURRENT_LIST_DIR}/CPM.cmake)
+
+CPMFindPackage(
+  NAME CLI11
+  GITHUB_REPOSITORY CLIUtils/CLI11
+  VERSION 1.9.1
+)

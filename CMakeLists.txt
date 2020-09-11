@@ -1,25 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
 project(particle-filter LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# -------------------------- Set Standard Warnings and Settings ----------------------------
+include(cmake/StandardProjectSettings.cmake)
+add_library(project_options INTERFACE)
+target_compile_features(project_options INTERFACE cxx_std_17)
 
-find_package(OpenCV REQUIRED)
-find_package(OpenMP)
+# Link this 'library' to use the warnings specified in CompilerWarnings.cmake
+add_library(project_warnings INTERFACE)
 
+# standard compiler warnings
+include(cmake/CompilerWarnings.cmake)
+set_project_warnings(project_warnings)
 
-add_executable(particle-filter
-                main.cpp
-                map_reader.cpp
-                motion_model.cpp
-                sensor_model.cpp
-              )
+include(cmake/StaticAnalyzers.cmake)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS})
-
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${OpenCV_LIBS})
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
-endif()
-
+add_subdirectory(src)

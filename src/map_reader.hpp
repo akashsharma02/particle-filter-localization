@@ -1,18 +1,14 @@
 #ifndef MAP_READER_HPP
 #define MAP_READER_HPP
 
-#include <string>
 #include <opencv2/opencv.hpp>
+#include <string>
 
 namespace pfilter
 {
     class MapReader
     {
-    private:
-        cv::Mat occupancy_map, free_map;
-        bool map_state;
-
-    public:
+       public:
         MapReader(std::string filename);
         virtual ~MapReader();
 
@@ -20,11 +16,16 @@ namespace pfilter
 
         cv::Mat& getOccupancyMap(void);
         cv::Mat& getFreeMap(void);
-        inline bool getMapState(void) { return map_state; }
+        inline bool getMapState(void) { return map_state_; }
 
-        int size_x, size_y;
-        int resolution;
+        int size_x_, size_y_;
+        int resolution_;
+
+       private:
+        std::string filename_;
+        cv::Mat occupancy_map_, free_map_;
+        bool map_state_;
     };
-} /* pfilter */
+}  // namespace pfilter
 
 #endif /* MAP_READER_HPP */

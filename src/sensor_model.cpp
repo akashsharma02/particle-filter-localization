@@ -19,7 +19,7 @@ namespace pfilter
 
     SensorModel::~SensorModel() {}
 
-    double SensorModel::gaussian(double actual_range, double measured_range)
+    double SensorModel::gaussian(double actual_range, double measured_range) const
     {
         if (measured_range >= 0 && measured_range < ray_max_)
         {
@@ -30,7 +30,7 @@ namespace pfilter
         return 0;
     }
 
-    double SensorModel::expon(double actual_range, double measured_range)
+    double SensorModel::expon(double actual_range, double measured_range) const
     {
         if (measured_range >= 0 && measured_range < actual_range)
         {
@@ -40,7 +40,7 @@ namespace pfilter
         return 0;
     }
 
-    double SensorModel::uniform(double measured_range)
+    double SensorModel::uniform(double measured_range) const
     {
         if (measured_range >= 0 && measured_range < ray_max_)
         {
@@ -49,7 +49,7 @@ namespace pfilter
         return 0;
     }
 
-    double SensorModel::max_range(double measured_range)
+    double SensorModel::max_range(double measured_range) const
     {
         if (measured_range == ray_max_)
             return 1;
@@ -57,7 +57,7 @@ namespace pfilter
     }
 
     //! Implement bresenham's line algorithm to raycast
-    double SensorModel::raycast(const cv::Vec3d& x_t, unsigned int theta_radian, Ray& ray)
+    double SensorModel::raycast(const cv::Vec3d& x_t, unsigned int theta_radian, Ray& ray) const
     {
         double theta = x_t[2] - M_PI / 2 + theta_radian * M_PI / 180;
 

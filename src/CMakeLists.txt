@@ -1,3 +1,4 @@
+include(${PROJECT_SOURCE_DIR}/cmake/Functions.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/CLI11.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/spdlog.cmake)
 find_package(
@@ -15,7 +16,7 @@ add_executable(
   sensor_model.cpp
 )
 
-target_link_libraries(
+target_link_libraries_system(
   ${PROJECT_NAME}
   PRIVATE
   project_warnings
@@ -26,5 +27,5 @@ target_link_libraries(
   opencv_highgui
 )
 if(OpenMP_CXX_FOUND)
-  target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
+  target_link_libraries_system(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
 endif()

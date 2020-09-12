@@ -1,34 +1,34 @@
-#ifndef MOTION_MODEL_HPP
-#define MOTION_MODEL_HPP
+#ifndef PFILTER_MOTION_MODEL_HPP
+#define PFILTER_MOTION_MODEL_HPP
 
-#include <random>
 #include <opencv2/opencv.hpp>
+#include <random>
 
 namespace pfilter
 {
     class MotionModel
     {
-    private:
-        int map_resolution;
-        double alpha_1;
-        double alpha_2;
-        double alpha_3;
-        double alpha_4;
-        double motion_threshold;
-
-        double odo_rot1_delta;
-        double odo_rot2_delta;
-        double odo_trans_delta;
-
-        std::default_random_engine generator;
-    public:
-        MotionModel(int resolution);
+       public:
+        explicit MotionModel(int resolution);
         virtual ~MotionModel();
 
-        bool isMoving(const cv::Vec3d& u_t0, const cv::Vec3d& u_t1);
-        inline double distanceMoved(void) { return odo_trans_delta; };
-        cv::Vec3d update(cv::Vec3d u_t0, cv::Vec3d u_t1, cv::Vec3d x_t0);
+        bool isMoving(const cv::Vec3d& u_t0, const cv::Vec3d& u_t1) const;
+        inline double distanceMoved() const { return odo_trans_delta_; };
+        cv::Vec3d update(const cv::Vec3d& u_t0, const cv::Vec3d& u_t1, const cv::Vec3d& x_t0);
 
+       private:
+        int map_resolution_;
+        double alpha_1_;
+        double alpha_2_;
+        double alpha_3_;
+        double alpha_4_;
+        double motion_threshold_;
+
+        double odo_rot1_delta_;
+        double odo_rot2_delta_;
+        double odo_trans_delta_;
+
+        std::default_random_engine generator_;
     };
 } /* namespace pfilter */
-#endif /* MOTION_MODEL_HPP */
+#endif /* PFILTER_MOTION_MODEL_HPP */

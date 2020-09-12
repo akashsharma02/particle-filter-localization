@@ -9,14 +9,14 @@ namespace pfilter
     class MapReader
     {
        public:
-        MapReader(std::string filename);
+        explicit MapReader(std::string filename);
         virtual ~MapReader();
 
         void display(void);
 
         cv::Mat& getOccupancyMap(void);
         cv::Mat& getFreeMap(void);
-        inline bool getMapState(void) { return map_state_; }
+        inline bool getMapState(void) const { return map_state_; }
 
         int size_x_, size_y_;
         int resolution_;

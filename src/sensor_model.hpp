@@ -1,29 +1,29 @@
-#ifndef SENSOR_MODEL_HPP
-#define SENSOR_MODEL_HPP
+#ifndef PFILTER_SENSOR_MODEL_HPP
+#define PFILTER_SENSOR_MODEL_HPP
 
-#include "map_reader.hpp"
 #include <vector>
+#include "map_reader.hpp"
 
 namespace pfilter
 {
     class SensorModel
     {
        public:
-           using Ray = std::vector<cv::Point2i>;
-           using Rays = std::vector<Ray>;
+        using Ray  = std::vector<cv::Point2i>;
+        using Rays = std::vector<Ray>;
 
-        SensorModel(pfilter::MapReader& r_map_reader, size_t log_file_num);
+        SensorModel(pfilter::MapReader& map_reader, size_t log_file_num);
         virtual ~SensorModel();
 
-        double gaussian(double actual_range, double measured_range);
-        double expon(double actual_range, double measured_range);
-        double uniform(double measured_range);
-        double max_range(double measured_range);
+        double gaussian(double actual_range, double measured_range) const;
+        double expon(double actual_range, double measured_range) const;
+        double uniform(double measured_range) const;
+        double max_range(double measured_range) const;
 
-        double raycast(const cv::Vec3d& x_t, unsigned int theta_radian, Ray& ray);
-        cv::Mat testRaycast(cv::Mat world_free_map, const Rays& rays);
+        double raycast(const cv::Vec3d& x_t, unsigned int theta_radian, Ray& ray) const;
         double beamRangeFinderModel(const std::vector<double>& z_t, const cv::Vec3d& x_t, bool test_raycast);
 
+        static cv::Mat testRaycast(cv::Mat world_free_map, const Rays& rays);
        private:
         const std::vector<double> ray_max_table = { 818.3, 819.1, 819.1, 819.1, 819.1 };
         pfilter::MapReader& map_reader_;
@@ -38,4 +38,4 @@ namespace pfilter
         double lambda_short_;
     };
 } /* namespace pfilter */
-#endif /* SENSOR_MODEL_HPP */
+#endif /* PFILTER_SENSOR_MODEL_HPP */

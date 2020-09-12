@@ -64,11 +64,11 @@ namespace pfilter
             }
             cv::flip(occupancy, occupancy_map_, 0);
             cv::flip(free, free_map_, 0);
-            spdlog::info("Finished reading map file: {}", filename);
+            spdlog::info("Finished reading map file: {}", filename_);
         }
         else
         {
-            spdlog::error("Unable to read map file: {}", filename);
+            spdlog::error("Unable to read map file: {}", filename_);
             map_state_ = false;
         }
     }
